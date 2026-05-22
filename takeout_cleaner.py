@@ -271,6 +271,15 @@ def relative_display(path: Path, root: Path) -> str:
         return str(path)
 
 
+def norm_path_key(p: object) -> str:
+    """Stable cross-platform key for path lookups.
+    exiftool -j returns SourceFile with forward slashes on Windows, while
+    str(Path) uses backslashes. normpath collapses both to native form so
+    dict lookups match. (No case folding — Windows lookups rely on exiftool
+    echoing the same case we passed in.)"""
+    return os.path.normpath(str(p))
+
+
 # ---------------------------------------------------------------------------
 # Progress bar
 # ---------------------------------------------------------------------------
@@ -576,7 +585,7 @@ def exiftool_read(paths: Sequence[Path]) -> Dict[str, dict]:
     if isinstance(payload, list):
         for item in payload:
             if isinstance(item, dict) and "SourceFile" in item:
-                result[str(item["SourceFile"])] = item
+                result[norm_path_key(item["SourceFile"])] = item
     return result
 
 
@@ -1059,7 +1068,7 @@ def decide_fix_actions(
             progress.advance(len(chunk))
             continue
         for entry in chunk:
-            tags = tags_by_file.get(str(entry.media_path), {})
+            tags = tags_by_file.get(norm_path_key(entry.media_path), {})
 
             # Pick the most authoritative EXIF date field for this media type.
             if entry.is_video:
@@ -1489,7 +1498,7 @@ def cmd_rename(args: argparse.Namespace) -> int:
             except RuntimeError:
                 continue
             for media in chunk:
-                tags = tags_by_file.get(str(media), {})
+                tags = tags_by_file.get(norm_path_key(media), {})
                 value = (
                     tags.get("DateTimeOriginal")
                     or tags.get("CreateDate")
