@@ -128,16 +128,28 @@ def nfc(s: str) -> str:
 
 
 def resolve_timezone(name: Optional[str]) -> dt.tzinfo:
-    """Return ZoneInfo for `name` if given, else the system's local tz."""
+    """Return a tzinfo for `name` if given, else the system's local tz.
+
+    UTC is short-circuited to `datetime.timezone.utc` so it works on systems
+    that don't ship an IANA tz database (notably Windows — see the install
+    note for `tzdata`)."""
     if not name:
         return dt.datetime.now().astimezone().tzinfo or dt.timezone.utc
+    if name.strip().upper() == "UTC":
+        return dt.timezone.utc
     if ZoneInfo is None:
         err("--timezone requires Python 3.9+ (zoneinfo). Falling back to system local tz.")
         return dt.datetime.now().astimezone().tzinfo or dt.timezone.utc
     try:
         return ZoneInfo(name)
     except Exception as exc:
-        err(f"invalid timezone {name!r}: {exc}")
+        if sys.platform == "win32":
+            err(
+                f"invalid timezone {name!r}: {exc}. Windows does not ship an "
+                f"IANA tz database; install one with:  py -m pip install tzdata"
+            )
+        else:
+            err(f"invalid timezone {name!r}: {exc}")
         raise SystemExit(2)
 
 

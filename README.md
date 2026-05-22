@@ -348,6 +348,15 @@ All the optional flags (`--timezone`, `--album`, `--log-file`,
 `--prefer-json-on-conflict`) work identically. See the Unix sections
 above for what they do.
 
+> **One Windows quirk for `--timezone`:** Python on Windows doesn't ship
+> with the IANA timezone database, so `--timezone UTC` works out of the
+> box but `--timezone Europe/Paris` doesn't. If you want to use a named
+> timezone, install the database first:
+>
+> ```powershell
+> py -m pip install tzdata
+> ```
+
 ---
 
 ## Known limitations
