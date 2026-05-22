@@ -1,0 +1,12 @@
+# macOS Finder metadata
+.DS_Store
+
+# Python bytecode caches
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Test / IDE artifacts
+.pytest_cache/
+.idea/
+.vscode/

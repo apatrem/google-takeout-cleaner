@@ -1,0 +1,35 @@
+name: Windows smoke test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: Windows smoke test
+    runs-on: windows-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ExifTool
+        run: choco install exiftool -y --no-progress
+        shell: pwsh
+
+      - name: Verify tools
+        run: |
+          python --version
+          exiftool -ver
+        shell: pwsh
+
+      - name: Run smoke test
+        run: python tests/test_smoke.py
+        shell: pwsh

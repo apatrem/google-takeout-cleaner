@@ -154,6 +154,38 @@ def setup_file_logging(path: Optional[Path]) -> None:
     _LOGGER.addHandler(handler)
 
 
+_LONG_PATHS_CHECKED = False
+
+
+def check_windows_long_paths() -> None:
+    """Warn once if Windows long-path support is disabled. Best-effort:
+    silent on non-Windows or if the registry is unreadable."""
+    global _LONG_PATHS_CHECKED
+    if _LONG_PATHS_CHECKED:
+        return
+    _LONG_PATHS_CHECKED = True
+    if sys.platform != "win32":
+        return
+    try:
+        import winreg  # stdlib on Windows only
+        with winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SYSTEM\CurrentControlSet\Control\FileSystem",
+        ) as key:
+            value, _ = winreg.QueryValueEx(key, "LongPathsEnabled")
+    except (OSError, ImportError):
+        return  # corporate lockdown or unexpected stdlib state — don't be noisy
+    if value:
+        return
+    warn(
+        "Windows long-path support is disabled. Files with paths longer than "
+        "260 characters may fail. To fix (one-time, requires admin): in an "
+        "elevated PowerShell run "
+        "New-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\"
+        "FileSystem' -Name 'LongPathsEnabled' -Value 1 -PropertyType DWORD -Force"
+    )
+
+
 def is_media_ext(ext: str) -> bool:
     return ext.lower() in MEDIA_EXTENSIONS
 
@@ -1709,6 +1741,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    check_windows_long_paths()
     return args.func(args)
 
 

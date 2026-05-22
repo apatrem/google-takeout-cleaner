@@ -259,6 +259,97 @@ python3 takeout_cleaner.py rename \
 
 ---
 
+## On Windows
+
+The instructions above assume macOS or Linux. Windows works too — the
+commands and paths are different, but the tool itself is the same.
+
+### 1. Unzip your Takeout
+
+Same as before: download all the ZIP files into one folder (e.g.
+`C:\Users\YOU\Downloads\google-export\`) and **right-click each one →
+"Extract All"**. Rename the resulting folders so they don't collide:
+`Takeout-001`, `Takeout-002`, ...
+
+> **Note about album names:** if any of your Google Photos albums contain
+> the characters `< > : " | ? * \ /`, Windows will silently rename those
+> folders during unzip (e.g. `WTF?? party` becomes `WTF party`). Your
+> photos and metadata are unaffected — only the folder name on disk will
+> differ from what you saw in Google Photos.
+
+### 2. Install Python, ExifTool, and Git
+
+Open **Windows Terminal** (it ships with Windows 11; on Windows 10 install
+it from the Microsoft Store, or just use **PowerShell**).
+
+```powershell
+winget install Python.Python.3.12 -e
+winget install OliverBetz.ExifTool -e
+winget install Git.Git -e
+```
+
+Close the terminal and reopen it (so `PATH` picks up the new tools).
+Verify:
+
+```powershell
+py --version
+exiftool -ver
+git --version
+```
+
+You should see version numbers, not errors.
+
+### 3. Enable long paths (one-time setup)
+
+Google Photos exports can have file paths longer than Windows' default
+260-character limit. Run this once in an **elevated PowerShell** (right-click
+PowerShell → "Run as administrator"):
+
+```powershell
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
+  -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+```
+
+If you can't get admin access, you can instead flip the toggle in
+**Settings → System → For developers → "Enable Win32 long paths"**.
+
+When the tool starts, it warns you if this is still disabled.
+
+### 4. Get the tool
+
+```powershell
+cd $HOME\Downloads
+git clone https://github.com/apatrem/google-takeout-cleaner.git
+cd google-takeout-cleaner
+```
+
+### 5. Run the tool
+
+The happy-path single command:
+
+```powershell
+py takeout_cleaner.py all `
+  --target $HOME\Pictures\google-photos-cleaned `
+  --source $HOME\Downloads\google-export\Takeout-001 `
+  --source $HOME\Downloads\google-export\Takeout-002 `
+  --source $HOME\Downloads\google-export\Takeout-003 `
+  --dedup `
+  --rename
+```
+
+This is a **dry run**. When the output looks right, re-run with `--apply`
+at the end.
+
+The backticks (`` ` ``) are PowerShell's line-continuation character — the
+same role `\` plays on macOS/Linux. If you'd rather write a single long
+line, that works too.
+
+All the optional flags (`--timezone`, `--album`, `--log-file`,
+`--prefer-json-on-conflict`) work identically. See the Unix sections
+above for what they do.
+
+---
+
 ## Known limitations
 
 The tool intentionally keeps a small scope. If any of these matter to you,
