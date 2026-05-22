@@ -30,6 +30,10 @@ jobs:
           exiftool -ver
         shell: pwsh
 
-      - name: Run smoke test
+      - name: Run end-to-end smoke test
         run: python tests/test_smoke.py
+        shell: pwsh
+
+      - name: Run granular test cases
+        run: python tests/test_cases.py
         shell: pwsh
